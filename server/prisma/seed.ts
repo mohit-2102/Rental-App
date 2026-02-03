@@ -1,8 +1,24 @@
+import "dotenv/config";
+import { fileURLToPath } from "url";
+
 import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import fs from "fs";
 import path from "path";
 
-const prisma = new PrismaClient();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not set");
+}
+
+const pool = new Pool({ connectionString: databaseUrl });
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(pool),
+});
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,10 +50,15 @@ async function insertLocationData(locations: any[]) {
 
 async function resetSequence(modelName: string) {
   const quotedModelName = `"${toPascalCase(modelName)}"`;
+  const modelNameCamel = toCamelCase(modelName);
+  const model = (prisma as any)[modelNameCamel];
 
-  const maxIdResult = await (
-    prisma[modelName as keyof PrismaClient] as any
-  ).findMany({
+  if (!model) {
+    console.error(`Model ${modelName} not found in Prisma client`);
+    return;
+  }
+
+  const maxIdResult = await model.findMany({
     select: { id: true },
     orderBy: { id: "desc" },
     take: 1,
@@ -125,4 +146,7 @@ async function main() {
 
 main()
   .catch((e) => console.error(e))
-  .finally(async () => await prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+    await pool.end();
+  });
