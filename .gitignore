@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+
+# Next.js
+client/.next/
+client/node_modules/
+
+# Server
+server/node_modules/
+server/dist/
+
+# Env
+.env
+.env.local
+client/.env.local
+server/.env
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
