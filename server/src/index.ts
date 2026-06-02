@@ -5,11 +5,15 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import { authMiddleware } from "./middleware/authMiddleware.js"
+import { prisma } from "./lib/prisma.js";
 /* Route Imports */
 import tenantRoutes from "./routes/tenantRoutes.js"
 import managerRoutes from "./routes/managerRoutes.js"
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from '@prisma/adapter-pg';
+import propertyRoutes from "./routes/propertyRoutes.js"
+// import { PrismaClient } from "@prisma/client";
+// import { PrismaPg } from '@prisma/adapter-pg';
+import applicationRoutes from './routes/applicationRoutes.js';
+import leaseRoutes from './routes/leaseRoutes.js';
 
 /* CONFIGURATIONS */
 dotenv.config();
@@ -22,8 +26,8 @@ app.use(morgan("common"))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 
-export const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
-export const prisma = new PrismaClient({ adapter })
+// export const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+// export const prisma = new PrismaClient({ adapter })
 
 /* ROUTES */
 app.get("/", (req, res) => {
@@ -31,8 +35,10 @@ app.get("/", (req, res) => {
   res.status(200).json("This is the Home Page");
 });
 
+app.use("/applications", applicationRoutes);
+app.use("/leases", leaseRoutes);
+app.use("/properties", propertyRoutes)
 app.use("/tenants", authMiddleware(["tenant"]), tenantRoutes)
-
 app.use("/managers", authMiddleware(["manager"]), managerRoutes)
 
 const port = process.env.PORT || 5000
